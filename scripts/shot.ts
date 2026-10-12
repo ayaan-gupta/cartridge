@@ -3,9 +3,13 @@
  *
  *   npm run shot -- sheet            every shape in the sprite library
  *   npm run shot -- carts            title card and first frame of each template
+ *   npm run shot -- prompt "a frog dodging cars"   a generated cart, mid-game
  */
 import path from 'node:path'
+import { replay } from '../src/bot/bot'
 import { TEMPLATES } from '../src/cart/templates'
+import { OfflineGenerator } from '../src/gen/offline'
+import { generateManifest } from '../src/gen/pipeline'
 import { Engine } from '../src/engine/engine'
 import { Renderer } from '../src/engine/render'
 import { packSheet, TRANSPARENT } from '../src/engine/sheet'
@@ -54,9 +58,30 @@ async function carts(): Promise<void> {
   }
 }
 
+/** A generated cart, drawn a third of the way through the bot's winning run. */
+async function prompts(list: string[]): Promise<void> {
+  for (const prompt of list) {
+    const { manifest, tape } = await generateManifest(prompt, new OfflineGenerator())
+    const sheet = packSheet(composeSheet(synthCells(manifest)))
+    const engine = new Engine(manifest)
+    const renderer = new Renderer(sheet)
+    const total = replay(manifest, tape).frames
+    engine.start()
+    let frame = 0
+    for (let i = 0; i + 1 < tape.length && frame < total / 3; i += 2)
+      for (let f = 0; f < (tape[i + 1] as number) && frame < total / 3; f++, frame++) engine.step(tape[i] as number)
+    const slug = manifest.title.toLowerCase().replace(/\s+/g, '-')
+    await writePng(path.join(OUT, `gen-${slug}.png`), indexedToRgba(renderer.draw(engine, frame), SCREEN_W, SCREEN_H, manifest.palette, 3))
+    engine.reset()
+    await writePng(path.join(OUT, `gen-${slug}-title.png`), indexedToRgba(renderer.draw(engine, 0), SCREEN_W, SCREEN_H, manifest.palette, 3))
+    console.log(`${manifest.title}: ${slug}`)
+  }
+}
+
 async function main(): Promise<void> {
   const what = process.argv[2] ?? 'carts'
   if (what === 'sheet') await library()
+  else if (what === 'prompt') await prompts(process.argv.slice(3))
   else await carts()
   console.log(`wrote ${what} to ${OUT}`)
 }

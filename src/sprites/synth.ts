@@ -213,7 +213,7 @@ const TILE_WORDS: [RegExp, TileKind][] = [
   [/sand|beach|desert|dune|dust|gravel|salt/, 'sand'],
   [/leaf|bush|hedge|jungle|vine|moss|forest|reed|lily|kelp|seaweed|coral|flower|plant|cactus/, 'leaf'],
   [/cloud|sky|fog|mist|smoke|steam|cotton|marshmallow|pillow/, 'cloud'],
-  [/crate|box|block|barrel|container|cargo|chest|book|shelf/, 'crate'],
+  [/crate|box|barrel|container|cargo|chest|book|shelf/, 'crate'],
 ]
 const TILE_FALLBACKS: TileKind[] = ['brick', 'stone', 'grass', 'wood', 'metal', 'crate']
 
@@ -358,7 +358,7 @@ const BACKDROP_WORDS: [RegExp, BackdropKind][] = [
   [/sand|desert|beach|snow|ice|dust|tundra|dune/, 'dots'],
 ]
 const BACKDROP_FALLBACKS: BackdropKind[] = ['plain', 'dots', 'tufts', 'checker', 'clouds']
-const DARK_WORLD = /space|night|galaxy|cosmos|void|cave|mine|dungeon|crypt|haunted|midnight|deep|abyss|sewer|catacomb|shadow|dark|tunnel|cellar|orbit/
+const DARK_WORLD = /\b(space|night|galaxy|cosmos|void|caves?|mines?|dungeon|crypt|haunted|midnight|abyss|sewers?|catacombs?|shadows?|dark|tunnels?|cellar|orbit|starry)\b/
 
 export function backdrop(kind: BackdropKind, base: number, detail: number, rng: Rng): Cell {
   const cell = new Uint8Array(TILE * TILE).fill(base)
@@ -428,18 +428,22 @@ export function backdrop(kind: BackdropKind, base: number, detail: number, rng: 
 
 // ---- putting a sheet together ----
 
+/** Dark worlds draw light things on a dark backdrop, the other way round from the default. */
 export function isDarkWorld(manifest: Manifest): boolean {
-  return DARK_WORLD.test(`${manifest.art.background} ${manifest.blurb}`.toLowerCase())
+  return DARK_WORLD.test(manifest.art.background.toLowerCase())
 }
 
-export function iconCell(kind: ItemIcon | HazardIcon, dark: boolean): Cell {
-  // Pickups are always the lightest thing on screen so they read as treasure.
+/**
+ * Pickups and hazards. These are fixed drawings, not synthesised, and they
+ * are coloured the same in every world: pickups are the lightest thing on
+ * screen so they read as treasure, hazards are mid-toned with a dark edge.
+ */
+export function iconCell(kind: ItemIcon | HazardIcon): Cell {
   if (kind in ITEMS) return paint(ITEMS[kind as ItemIcon], PALE)
-  const shape = HAZARDS[kind as HazardIcon]
-  return paint(shape, kind === 'water' ? { ...HERO, a: dark ? 2 : 1, b: dark ? 1 : 2 } : dark ? HERO : DARK, kind !== 'water')
+  return paint(HAZARDS[kind as HazardIcon], HERO, kind !== 'water')
 }
 
-/** The eight cells the PRD asks an image model for, drawn here instead. */
+/** A whole sheet: the eight cells the PRD asks an image model for, plus the two icons. */
 export function synthCells(manifest: Manifest): Cells {
   const art = manifest.art
   const dark = isDarkWorld(manifest)
@@ -478,8 +482,8 @@ export function synthCells(manifest: Manifest): Cells {
     tileA: tile(tileKinds[0] as TileKind, rampA, new Rng(`${seed}|a`)),
     tileB: tile(tileKinds[1] as TileKind, rampB, new Rng(`${seed}|b`)),
     background: backdrop(backdropKind, dark ? 3 : 0, dark ? 2 : 1, new Rng(`${seed}|backdrop`)),
-    item: iconCell(art.item, dark),
-    hazard: iconCell(art.hazard, dark),
+    item: iconCell(art.item),
+    hazard: iconCell(art.hazard),
   }
 }
 
@@ -495,8 +499,8 @@ export function defaultCells(): Cells {
     tileA: tile('brick', { hi: 1, base: 2, lo: 3 }, rng),
     tileB: tile('grass', { hi: 0, base: 1, lo: 2 }, rng),
     background: backdrop('clouds', 0, 1, rng),
-    item: iconCell('coin', false),
-    hazard: iconCell('spike', false),
+    item: iconCell('coin'),
+    hazard: iconCell('spike'),
   }
 }
 

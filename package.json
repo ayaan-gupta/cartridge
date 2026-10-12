@@ -11,6 +11,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "art": "tsx scripts/build-art.ts",
+    "shot": "tsx scripts/shot.ts",
     "prompts": "tsx scripts/prompts.ts",
     "eval": "tsx scripts/eval-prompts.ts",
     "bench": "tsx scripts/bench.ts",
