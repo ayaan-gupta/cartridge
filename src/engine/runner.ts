@@ -20,6 +20,8 @@ export interface FrameStats {
   intervalMs: number
   /** Display frames that arrived more than half a frame late. */
   late: number
+  /** Simulation steps run. At 60 FPS this tracks `frames`. */
+  steps: number
 }
 
 export interface RunnerOptions {
@@ -38,8 +40,8 @@ export function paletteWords(palette: readonly string[]): Uint32Array {
 
 export class Runner {
   readonly engine: Engine
-  /** The buttons currently held. The page sets this from keys and touches. */
-  buttons: Buttons = 0
+  private buttons: Buttons = 0
+  private tapped: Buttons = 0
   private readonly renderer: Renderer
   private readonly context: CanvasRenderingContext2D
   private readonly image: ImageData
@@ -53,7 +55,7 @@ export class Runner {
   private tape: Tape | null = null
   private tapeAt = 0
   private tapeLeft = 0
-  private stats = { frames: 0, work: 0, worst: 0, interval: 0, late: 0 }
+  private stats = { frames: 0, work: 0, worst: 0, interval: 0, late: 0, steps: 0 }
 
   constructor(canvas: HTMLCanvasElement, cart: Cart, options: RunnerOptions = {}) {
     canvas.width = SCREEN_W
@@ -81,6 +83,17 @@ export class Runner {
     this.handle = 0
   }
 
+  /**
+   * Tells the runner which buttons are down right now. A press is also
+   * remembered until the next simulation step has seen it, because a quick
+   * tap on a touch screen can go down and up again between two steps and
+   * would otherwise never reach the game.
+   */
+  hold(buttons: Buttons): void {
+    this.tapped |= buttons & ~this.buttons
+    this.buttons = buttons
+  }
+
   /** Starts a fresh game and plays a recording into it instead of live input. */
   playTape(tape: Tape): void {
     this.tape = tape
@@ -103,14 +116,18 @@ export class Runner {
   readStats(): FrameStats {
     const s = this.stats
     const n = Math.max(1, s.frames)
-    const out = { frames: s.frames, workMs: s.work / n, worstMs: s.worst, intervalMs: s.interval / n, late: s.late }
-    this.stats = { frames: 0, work: 0, worst: 0, interval: 0, late: 0 }
+    const out = { frames: s.frames, workMs: s.work / n, worstMs: s.worst, intervalMs: s.interval / n, late: s.late, steps: s.steps }
+    this.stats = { frames: 0, work: 0, worst: 0, interval: 0, late: 0, steps: 0 }
     return out
   }
 
   private nextButtons(): Buttons {
     const tape = this.tape
-    if (!tape) return this.buttons
+    if (!tape) {
+      const buttons = this.buttons | this.tapped
+      this.tapped = 0
+      return buttons
+    }
     while (this.tapeLeft === 0 && this.tapeAt + 1 < tape.length) {
       this.tapeLeft = tape[this.tapeAt + 1] as number
       this.tapeAt += 2
@@ -153,6 +170,7 @@ export class Runner {
     const work = performance.now() - began
     const s = this.stats
     s.frames++
+    s.steps += due.steps
     s.work += work
     s.interval += elapsed
     if (work > s.worst) s.worst = work

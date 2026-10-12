@@ -393,3 +393,106 @@ describe('the engine stands alone', () => {
     }
   })
 })
+
+describe('the runner, on a stand-in canvas', () => {
+  /** Just enough of a canvas and a display for the runner to drive. */
+  function harness() {
+    const image = { data: new Uint8ClampedArray(SCREEN_W * SCREEN_H * 4) }
+    let blits = 0
+    const canvas = { width: 0, height: 0, getContext: () => ({ createImageData: () => image, putImageData: () => blits++ }) }
+    let pending: ((now: number) => void) | null = null
+    let now = 1000
+    const globals = globalThis as unknown as { requestAnimationFrame: unknown; cancelAnimationFrame: unknown }
+    globals.requestAnimationFrame = (callback: (now: number) => void) => {
+      pending = callback
+      return 1
+    }
+    globals.cancelAnimationFrame = () => {
+      pending = null
+    }
+    const frames = (count: number, interval = STEP_MS) => {
+      for (let i = 0; i < count; i++) {
+        now += interval
+        const callback = pending
+        pending = null
+        callback?.(now)
+      }
+    }
+    return { canvas: canvas as unknown as HTMLCanvasElement, image, frames, blits: () => blits }
+  }
+
+  it('does not lose a tap that goes down and up between two frames', async () => {
+    const { Runner } = await import('@/engine/runner')
+    const h = harness()
+    const runner = new Runner(h.canvas, { manifest: strip(), sheet })
+    runner.start()
+    h.frames(3)
+    expect(runner.engine.state).toBe('title')
+    runner.hold(BTN.a)
+    runner.hold(0)
+    h.frames(1)
+    expect(runner.engine.state).toBe('playing')
+    // And the tap is spent: it does not turn into a held button.
+    h.frames(30)
+    const floor = runner.engine.p.y
+    h.frames(30)
+    expect(runner.engine.p.y).toBe(floor)
+  })
+
+  it('plays a recording to a win, draws in the cart palette, and reports what it cost', async () => {
+    const { Runner } = await import('@/engine/runner')
+    const { solve } = await import('@/bot/bot')
+    const manifest = strip()
+    const tape = solve(manifest).tape
+    const h = harness()
+    let ended = 0
+    const events: string[] = []
+    const runner = new Runner(h.canvas, { manifest, sheet }, { onTapeEnd: () => ended++, onEvent: (e) => events.push(e) })
+    runner.start()
+    runner.playTape(tape)
+    expect(runner.watching).toBe(true)
+    runner.hold(BTN.left)
+    h.frames(400)
+    expect(runner.engine.state).toBe('won')
+    expect(ended).toBe(1)
+    expect(runner.watching).toBe(false)
+    expect(events).toContain('win')
+    const stats = runner.readStats()
+    expect(stats.frames).toBe(400)
+    expect(stats.steps).toBe(400)
+    expect(stats.late).toBe(0)
+    expect(h.blits()).toBeGreaterThan(300)
+    const colours = new Set<string>()
+    for (let i = 0; i < h.image.data.length; i += 4) colours.add(`${h.image.data[i]},${h.image.data[i + 1]},${h.image.data[i + 2]}`)
+    expect([...colours].sort()).toEqual(['136,192,112', '224,248,208', '52,104,86', '8,24,32'])
+    expect(runner.readStats().frames).toBe(0)
+  })
+
+  it('hands control back mid-recording, from wherever the bot had got to', async () => {
+    const { Runner } = await import('@/engine/runner')
+    const { solve } = await import('@/bot/bot')
+    const manifest = strip()
+    const h = harness()
+    const runner = new Runner(h.canvas, { manifest, sheet })
+    runner.start()
+    runner.playTape(solve(manifest).tape)
+    h.frames(40)
+    const x = runner.engine.p.x
+    expect(x).toBeGreaterThan(TILE)
+    runner.takeOver()
+    runner.hold(BTN.left)
+    h.frames(20)
+    expect(runner.engine.p.x).toBeLessThan(x)
+    expect(runner.engine.state).toBe('playing')
+  })
+
+  it('runs the simulation at 60 steps a second on a 120 Hz display', async () => {
+    const { Runner } = await import('@/engine/runner')
+    const h = harness()
+    const runner = new Runner(h.canvas, { manifest: strip(), sheet })
+    runner.start()
+    runner.hold(BTN.a)
+    h.frames(240, STEP_MS / 2)
+    expect(Math.abs(runner.engine.frame - 120)).toBeLessThanOrEqual(2)
+  })
+})

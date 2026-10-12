@@ -106,7 +106,7 @@ export function logo(): Canvas {
   let x = 16
   for (const ch of word) {
     const glyph = LETTERS[ch] as string[]
-    canvas.stamp(glyph, x + 1, 4, { '#': UI.accent })
+    canvas.stamp(glyph, x + 1, 4, { '#': UI.edge })
     canvas.stamp(glyph, x, 3, { '#': UI.ink })
     x += (glyph[0] as string).length + 1
   }

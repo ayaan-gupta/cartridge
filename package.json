@@ -12,11 +12,13 @@
     "typecheck": "tsc --noEmit",
     "art": "tsx scripts/build-art.ts",
     "shot": "tsx scripts/shot.ts",
-    "prompts": "tsx scripts/prompts.ts",
     "eval": "tsx scripts/eval-prompts.ts",
     "bench": "tsx scripts/bench.ts",
     "perf": "tsx scripts/perf.ts",
-    "demo": "tsx scripts/record-demo.ts"
+    "demo": "tsx scripts/record-demo.ts",
+    "screens": "tsx scripts/screens.ts",
+    "docs": "tsx scripts/build-docs.ts",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

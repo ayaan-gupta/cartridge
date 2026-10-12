@@ -1,0 +1,72 @@
+{
+  "what": "Frame cost of the real play page in headless Chromium, 390x844 viewport at device pixel ratio 3, bot playing.",
+  "caveat": "CPU throttling through the DevTools protocol at 4x is an emulation of a mid-range phone, not a measurement on one. It slows JavaScript and layout on the main thread. It does not model a phone GPU, thermal limits or a 120 Hz panel.",
+  "budgetMs": 16.666666666666668,
+  "unthrottled": [
+    {
+      "title": "LILY PAD DASH",
+      "frames": 762,
+      "workMs": 0.1318897619022159,
+      "worstMs": 0.30000007152557373,
+      "intervalMs": 16.666141732283464,
+      "late": 0,
+      "steps": 762,
+      "fps": 60.001889823301525
+    },
+    {
+      "title": "MOON MINER",
+      "frames": 695,
+      "workMs": 0.12028776707409097,
+      "worstMs": 0.5,
+      "intervalMs": 16.666043165467624,
+      "late": 0,
+      "steps": 695,
+      "fps": 60.0022446882905
+    },
+    {
+      "title": "GEM VAULT",
+      "frames": 863,
+      "workMs": 0.1137891082332695,
+      "worstMs": 0.6000000238418579,
+      "intervalMs": 16.666048667439163,
+      "late": 0,
+      "steps": 863,
+      "fps": 60.002224879717446
+    }
+  ],
+  "throttled": {
+    "rate": 4,
+    "carts": [
+      {
+        "title": "LILY PAD DASH",
+        "frames": 765,
+        "workMs": 0.33830065244163565,
+        "worstMs": 1.0999999046325684,
+        "intervalMs": 16.66614379084967,
+        "late": 0,
+        "steps": 765,
+        "fps": 60.00188241199725
+      },
+      {
+        "title": "MOON MINER",
+        "frames": 696,
+        "workMs": 0.3035919553246991,
+        "worstMs": 1.2999999523162842,
+        "intervalMs": 16.66609195402299,
+        "late": 0,
+        "steps": 696,
+        "fps": 60.00206903686334
+      },
+      {
+        "title": "GEM VAULT",
+        "frames": 868,
+        "workMs": 0.29216589933166853,
+        "worstMs": 1.2999999523162842,
+        "intervalMs": 16.66601382488479,
+        "late": 0,
+        "steps": 868,
+        "fps": 60.00235032247808
+      }
+    ]
+  }
+}

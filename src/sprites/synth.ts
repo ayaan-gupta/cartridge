@@ -345,12 +345,13 @@ export function tile(kind: TileKind, ramp: Ramp, rng: Rng): Cell {
   return cell
 }
 
-type BackdropKind = 'plain' | 'dots' | 'stars' | 'waves' | 'road' | 'checker' | 'clouds' | 'tufts' | 'hatch' | 'grid'
+type BackdropKind = 'plain' | 'dots' | 'stars' | 'waves' | 'road' | 'checker' | 'clouds' | 'tufts' | 'hatch' | 'grid' | 'brickwork'
 const BACKDROP_WORDS: [RegExp, BackdropKind][] = [
   [/star|space|night|galaxy|cosmos|void|orbit|moon/, 'stars'],
   [/water|sea|ocean|river|pond|lake|wave|swamp|pool|harbour|harbor|flood/, 'waves'],
   [/road|street|highway|asphalt|lane|track|runway|motorway|crossing/, 'road'],
-  [/floor|tile|kitchen|room|hall|lab|shop|palace|museum|library|office|school|hospital|mall/, 'checker'],
+  [/brick|wall|castle|tower|hall|fortress|keep|chimney/, 'brickwork'],
+  [/floor|tile|kitchen|room|lab|shop|palace|museum|library|office|school|hospital|mall/, 'checker'],
   [/sky|cloud|air|heaven|breeze|wind|storm/, 'clouds'],
   [/grass|meadow|field|garden|lawn|forest|jungle|park|farm|savanna|prairie/, 'tufts'],
   [/cave|mine|dungeon|tunnel|crypt|sewer|cellar|volcano|lava|rock|pit|catacomb/, 'hatch'],
@@ -391,7 +392,18 @@ export function backdrop(kind: BackdropKind, base: number, detail: number, rng: 
       for (let i = 0; i < 4; i++) px(cell, rng.int(16), rng.int(16), detail)
       break
     case 'checker':
-      for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) if ((x < 8) !== (y < 8)) px(cell, x, y, detail)
+      // Stippled, not solid: a full checkerboard shouts over the sprites.
+      for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) if ((x < 8) !== (y < 8) && (x + y) % 2 === 0) px(cell, x, y, detail)
+      break
+    case 'brickwork':
+      for (let x = 0; x < TILE; x++) {
+        px(cell, x, 7, detail)
+        px(cell, x, 15, detail)
+      }
+      for (let y = 0; y < 7; y++) {
+        px(cell, 3, y, detail)
+        px(cell, 11, y + 8, detail)
+      }
       break
     case 'clouds':
       for (let x = 3; x < 12; x++) px(cell, x, 9, detail)

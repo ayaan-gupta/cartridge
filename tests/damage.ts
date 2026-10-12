@@ -1,7 +1,7 @@
 import type { Rng } from '@/engine/rng'
 import type { Manifest } from '@/engine/types'
 
-// biome-ignore lint/suspicious/noExplicitAny: these helpers exist to build invalid data
+// Deliberately loose: these helpers exist to build invalid data.
 export type Loose = Record<string, any>
 export const clone = (m: Manifest): Loose => JSON.parse(JSON.stringify(m))
 
