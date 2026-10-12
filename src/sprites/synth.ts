@@ -58,23 +58,23 @@ export function paint(shape: Shape, scheme: Scheme, outline = true): Cell {
 
 const CHARACTER_WORDS: [RegExp, CharacterName][] = [
   [/robot|android|mech|droid|cyborg|machine/, 'robot'],
-  [/frog|toad|rabbit|bunny|hare|kangaroo|cricket|grasshopper|flea/, 'hopper'],
-  [/cat|kitten|dog|puppy|fox|wolf|pig|cow|sheep|goat|mouse|rat|bear|lion|tiger|horse|pony|deer|turtle|tortoise|hamster|squirrel|raccoon|panda|llama|dino|lizard|gecko|hedgehog|badger|otter|beaver|elephant|rhino/, 'quad'],
-  [/bird|duck|chick|hen|owl|penguin|eagle|crow|raven|pigeon|parrot|gull|goose|swan|hawk|sparrow|robin/, 'bird'],
+  [/frog|toad|rabbit|bunny|hare|kangaroo|cricket|grasshopper|flea|tadpole/, 'hopper'],
+  [/cat|kitten|dog|puppy|fox|wolf|pig|cow|sheep|goat|mouse|rat|bear|lion|tiger|horse|pony|deer|turtle|tortoise|hamster|squirrel|raccoon|panda|llama|dino|dinosaur|raptor|lizard|gecko|hedgehog|badger|otter|beaver|elephant|rhino|mole|camel|calf|lamb|kitty|hound|boar|moose|monkey|ape|gorilla/, 'quad'],
+  [/bird|duck|duckling|chick|chicken|rooster|turkey|hen|owl|penguin|eagle|crow|raven|pigeon|parrot|gull|seagull|goose|swan|hawk|sparrow|robin|heron|vulture/, 'bird'],
   [/bat|bee|wasp|fly|moth|butterfly|dragon|fairy|mosquito|hornet|firefly|pixie|angel|harpy/, 'flyer'],
-  [/fish|shark|whale|dolphin|piranha|eel|submarine|salmon|tuna|trout|seal|squid/, 'fish'],
-  [/slime|ghost|jelly|blob|germ|virus|spirit|phantom|ooze|cloud|amoeba|bubble|wisp|spectre|specter/, 'blob'],
+  [/fish|shark|whale|dolphin|piranha|eel|submarine|salmon|tuna|trout|seal|squid|pike|sub/, 'fish'],
+  [/slime|ghost|jelly|jellyfish|blob|germ|virus|spirit|phantom|ooze|cloud|amoeba|bubble|wisp|spectre|specter|snowman|balloon|puddle|poltergeist|gumdrop|marshmallow/, 'blob'],
   [/snake|worm|serpent|caterpillar|centipede|viper|cobra/, 'snake'],
   [/truck|bus|lorry|van|tractor|train|tank|bulldozer|tram|wagon/, 'truck'],
   [/car|taxi|cab|kart|buggy|jeep|vehicle|traffic|racer|scooter|bike|skateboard/, 'car'],
-  [/rocket|plane|jet|missile|ship|boat|spaceship|shuttle|torpedo|arrow|bullet|comet|drone|kite/, 'rocket'],
-  [/ufo|saucer|alien|invader|satellite|probe|helicopter/, 'saucer'],
-  [/spike|urchin|mine|bomb|cactus|thorn|burr|sawblade|saw|star|sun|spark/, 'spiky'],
-  [/rock|boulder|asteroid|meteor|stone|snowball|coal|log|barrel|crate|box|block|ball|egg|nut/, 'rock'],
+  [/rocket|plane|jet|missile|ship|boat|spaceship|shuttle|torpedo|arrow|bullet|comet|kite|airplane|glider/, 'rocket'],
+  [/ufo|saucer|alien|invader|satellite|probe|helicopter|drone|martian/, 'saucer'],
+  [/spike|urchin|mine|bomb|cactus|thorn|burr|sawblade|saw|star|sun|spark|lightning|thunderbolt|laser|trap|virus/, 'spiky'],
+  [/rock|boulder|asteroid|meteor|stone|snowball|coal|log|barrel|crate|box|block|ball|egg|nut|anvil|piano|brick|weight|cookie|cupcake|donut|pie|tumbleweed|cannonball|hailstone|potato/, 'rock'],
   [/spider|crab|beetle|ant|bug|scorpion|octopus|tick|roach|lobster|mite/, 'bug'],
   [/skull|skeleton|zombie|mummy|monster|demon|ogre|troll|goblin|vampire|ghoul|witch|orc|golem|yeti/, 'skull'],
-  [/drop|rain|tear|flame|fire|lava|ember|leaf|snow|acid|icicle|hail|water|petal|feather|seed/, 'drop'],
-  [/knight|wizard|ninja|pirate|kid|boy|girl|hero|astronaut|chef|farmer|miner|thief|guard|princess|prince|king|queen|explorer|runner|baker|courier|postman|firefighter|cowboy|samurai|monk|elf|dwarf|gnome|player|person|man|woman|human|scientist|diver|climber|skier|surfer|janitor|librarian|waiter|student|nurse|doctor|detective|plumber|gardener|ranger|hunter|sailor|pilot|driver/, 'biped'],
+  [/drop|rain|raindrop|tear|flame|fire|fireball|lava|ember|leaf|snow|snowflake|acid|icicle|hail|water|petal|feather|seed|blizzard|storm|hailstorm|wave|avalanche/, 'drop'],
+  [/knight|wizard|ninja|pirate|kid|boy|girl|hero|astronaut|chef|farmer|miner|thief|guard|princess|prince|king|queen|explorer|runner|baker|courier|postman|firefighter|cowboy|samurai|monk|elf|dwarf|gnome|player|person|man|woman|human|scientist|diver|climber|skier|surfer|janitor|librarian|waiter|student|nurse|doctor|detective|plumber|gardener|ranger|hunter|sailor|pilot|driver|bandit|outlaw|robber|burglar|hacker|postman|courier|surfer|girl|child|baby|mother|father|friend|villager|caveman|viking|gladiator|mage|sorcerer|clown|jester|squire|lifeguard|commuter|pedestrian|cyclist|engineer|mechanic|soldier|spy|agent|cop|officer/, 'biped'],
 ]
 const HERO_FALLBACKS: CharacterName[] = ['biped', 'quad', 'bird', 'robot', 'hopper', 'blob']
 const ENEMY_FALLBACKS: CharacterName[] = ['blob', 'bug', 'spiky', 'skull', 'flyer', 'snake', 'rock', 'drop']
@@ -83,9 +83,9 @@ const GOAL_WORDS: [RegExp, GoalName][] = [
   [/flag|finish|banner|checkpoint|summit|peak|top/, 'flag'],
   [/door|exit|gate|portal|hatch|doorway|elevator|ladder|stairs|escape/, 'door'],
   [/star|sun|crystal|orb|light|beacon|lantern/, 'star'],
-  [/house|home|castle|nest|barn|burrow|hut|cabin|den|hive|tower|station|base|shop|school|temple|shelter|garage|igloo|tent|cave/, 'house'],
+  [/house|home|castle|nest|barn|burrow|hut|cabin|den|hive|tower|station|base|shop|school|temple|shelter|garage|igloo|tent|cave|stable|mansion|church|lighthouse|palace/, 'house'],
   [/chest|treasure|vault|safe|loot|crate|gold/, 'chest'],
-  [/pad|lily|planet|moon|pond|island|pool|puddle|plate|bowl|ring|hole|target|rug|bed|pillow/, 'pad'],
+  [/pad|lily|planet|moon|pond|oasis|island|pool|puddle|plate|bowl|ring|hole|target|rug|bed|pillow/, 'pad'],
   [/trophy|cup|grail|crown|medal|prize/, 'trophy'],
   [/cheese|cake|pizza|carrot|apple|food|pie|burger|fruit|berry|acorn|bone|honey|cookie|donut|taco|sandwich|fish|worm|seed|nut|picnic/, 'food'],
 ]
@@ -459,7 +459,10 @@ export function synthCells(manifest: Manifest): Cells {
     return character(name, enemySchemes[i] as Scheme, local, true)
   })
 
-  const goalName = matchWord(art.goal, GOAL_WORDS) ?? new Rng(`${seed}|goal`).pick(GOAL_FALLBACKS)
+  // A goal can be a place, or someone to reach: "save the kitten".
+  const goalName = matchWord(art.goal, GOAL_WORDS)
+  const goalWho = goalName ? undefined : matchWord(art.goal, CHARACTER_WORDS)
+  const goalShape = goalName ? GOALS[goalName] : goalWho ? CHARACTERS[goalWho] : GOALS[new Rng(`${seed}|goal`).pick(GOAL_FALLBACKS)]
   const tileKinds = art.tiles.map((text, i) => matchWord(text, TILE_WORDS) ?? new Rng(`${seed}|tile${i}`).pick(TILE_FALLBACKS))
   if (tileKinds[0] === tileKinds[1]) tileKinds[1] = TILE_FALLBACKS.find((k) => k !== tileKinds[0]) as TileKind
   const backdropKind = matchWord(art.background, BACKDROP_WORDS) ?? new Rng(`${seed}|bg`).pick(BACKDROP_FALLBACKS)
@@ -471,7 +474,7 @@ export function synthCells(manifest: Manifest): Cells {
     enemy1: enemies[0] as Cell,
     enemy2: enemies[1] as Cell,
     enemy3: enemies[2] as Cell,
-    goal: paint(GOALS[goalName], dark ? PALE : HERO),
+    goal: paint(goalShape, dark ? PALE : HERO),
     tileA: tile(tileKinds[0] as TileKind, rampA, new Rng(`${seed}|a`)),
     tileB: tile(tileKinds[1] as TileKind, rampB, new Rng(`${seed}|b`)),
     background: backdrop(backdropKind, dark ? 3 : 0, dark ? 2 : 1, new Rng(`${seed}|backdrop`)),

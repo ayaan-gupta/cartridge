@@ -42,8 +42,6 @@ const TOP_ACTIONS: Buttons[] = [
 const FAR = 1e9
 /** Frames of urgency per outstanding pickup. Larger than any walk across a map. */
 const PER_ITEM = 4000
-/** A ceiling on remembered positions, which is what bounds memory. */
-const MAX_NODES = 250000
 
 /** Steps from every open tile to the target tile, ignoring gravity. */
 function distanceField(game: Engine, tx: number, ty: number): Float64Array {
@@ -124,7 +122,7 @@ export function replay(manifest: Manifest, tape: Tape): { state: GameState; fram
 }
 
 export function solve(manifest: Manifest, options: BotOptions = {}): BotResult {
-  const maxExpansions = options.maxExpansions ?? 40000
+  const maxExpansions = options.maxExpansions ?? 80000
   const game = new Engine(manifest)
   game.start()
   // Each held combination should move the player about half a tile, however
@@ -215,25 +213,33 @@ export function solve(manifest: Manifest, options: BotOptions = {}): BotResult {
     return need * PER_ITEM + (nearest >= FAR ? 600 : nearest / game.speed)
   }
 
-  const keyOf = (): string => {
+  /**
+   * What makes two positions "the same" for the search. Packed into one
+   * number below 2^53: where the player is, how they are moving, how far the
+   * clock has run, and a hash of which pickups are left and where chasers are.
+   */
+  const keyOf = (): number => {
     const p = game.p
-    let mask = 0
-    for (let i = 0; i < statics.length; i++) if ((game.ents[statics[i] as number] as Ent).alive) mask |= 1 << (i % 30)
-    let k = `${p.x >> 2},${(p.y + 32) >> 2},${mask},${game.collected}`
-    if (game.side) k += `,${Math.round(p.vy)}${p.ground ? 'g' : 'a'}`
-    if (timeMatters) k += `,${Math.floor(game.frame / wait)}`
+    let mix = game.collected
+    for (let i = 0; i < statics.length; i++) if ((game.ents[statics[i] as number] as Ent).alive) mix = (mix * 31 + i + 7) | 0
     for (const i of chasers) {
       const e = game.ents[i] as Ent
-      k += `,${e.x >> 4}.${e.y >> 4}`
+      mix = (Math.imul(mix, 131) + (e.x >> 4) * 64 + (e.y >> 4)) | 0
     }
-    return k
+    const cx = Math.max(0, Math.min(127, (p.x + 16) >> 2))
+    const cy = Math.max(0, Math.min(127, (p.y + 32) >> 2))
+    const air = game.side ? (Math.round(p.vy) + 8) * 2 + (p.ground ? 1 : 0) : 0
+    const time = timeMatters ? Math.min(4095, Math.floor(game.frame / wait)) : 0
+    return (((cx * 128 + cy) * 64 + air) * 4096 + time) * 262144 + (mix & 262143)
   }
 
-  const snaps: (Snapshot | undefined)[] = [game.snapshot()]
+  // A node is its parent plus one held combination. Only expanded nodes keep
+  // a snapshot, which is what keeps a long search inside a sane amount of memory.
+  const snaps = new Map<number, Snapshot>()
   const parents: number[] = [-1]
   const taken: Buttons[] = [0]
   const lengths: number[] = [0]
-  const seen = new Set<string>([keyOf()])
+  const seen = new Set<number>([keyOf()])
   const open = new MinHeap()
   open.push(estimate(), 0)
   let expanded = 0
@@ -253,9 +259,12 @@ export function solve(manifest: Manifest, options: BotOptions = {}): BotResult {
   while (open.size > 0) {
     if (expanded >= maxExpansions) return failed('budget', expanded)
     const node = open.pop()
-    const from = snaps[node] as Snapshot
-    // A position is only ever expanded once, so its snapshot can go.
-    snaps[node] = undefined
+    if (node > 0) {
+      game.restore(snaps.get(parents[node] as number) as Snapshot)
+      for (let f = 0; f < (lengths[node] as number); f++) game.step(taken[node] as number)
+    }
+    const from = game.snapshot()
+    snaps.set(node, from)
     expanded++
     for (const buttons of actions) {
       game.restore(from)
@@ -275,13 +284,10 @@ export function solve(manifest: Manifest, options: BotOptions = {}): BotResult {
       const key = keyOf()
       if (seen.has(key)) continue
       seen.add(key)
-      const id = snaps.length
-      if (id >= MAX_NODES) return failed('budget', expanded)
-      snaps.push(game.snapshot())
       parents.push(node)
       taken.push(buttons)
       lengths.push(used)
-      open.push(game.frame * 0.5 + estimate(), id)
+      open.push(game.frame * 0.5 + estimate(), parents.length - 1)
     }
   }
   return failed('exhausted', expanded)
