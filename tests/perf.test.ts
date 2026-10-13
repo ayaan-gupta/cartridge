@@ -110,11 +110,24 @@ describe('frame budget under a 4x CPU throttle (emulated mid-range phone)', () =
     console.log(`4x CPU throttle, headless Chromium, 390x844 at 3x:\n${rows.join('\n')}`)
   })
 
-  it('costs more under the throttle than without it, which shows the throttle is real', async (context) => {
+  it('really is throttled: the same busy loop takes several times longer', async (context) => {
     if (!browser) return context.skip()
-    const free = await measure(stressManifest(), IDLE, 1, 240)
-    const slowed = await measure(stressManifest(), IDLE, 4, 240)
-    console.log(`stress cart work per frame: ${free.workMs.toFixed(3)} ms unthrottled, ${slowed.workMs.toFixed(3)} ms at 4x`)
-    expect(slowed.workMs).toBeGreaterThan(free.workMs * 1.4)
+    // A frame of this engine is too cheap to compare reliably against a
+    // 0.1 ms timer, so the throttle itself is checked with a loop that is not.
+    const page = await browser.newPage()
+    const spin = () =>
+      page.evaluate(() => {
+        const began = performance.now()
+        let x = 0
+        for (let i = 0; i < 40_000_000; i++) x = (x + i * 7) % 1000003
+        return performance.now() - began + (x < 0 ? 1 : 0)
+      })
+    await spin()
+    const free = Math.min(await spin(), await spin())
+    await throttleCpu(page, 4)
+    const slowed = Math.min(await spin(), await spin())
+    await page.close()
+    console.log(`busy loop: ${free.toFixed(0)} ms unthrottled, ${slowed.toFixed(0)} ms at 4x`)
+    expect(slowed).toBeGreaterThan(free * 2)
   })
 })

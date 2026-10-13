@@ -32,7 +32,7 @@ Plain facts for whoever writes the README. Every number here was measured in the
 |---|---|---|---|
 | 50 varied prompts give 50 valid manifests, at least 95% on the first try and 100% after repair | **Met on the offline generator only.** The LLM path is implemented and has never been run. | 50/50 valid on the first try, 50/50 after repair, 0 template fallbacks | `tests/acceptance.test.ts`, `npm run eval` (writes `docs/eval-offline.json`) |
 | Every generated cart is winnable, checked by a bot that reaches the goal within the time limit | **Met** | 50/50 won as generated, each recording replayed to a win on a fresh engine with no life lost. Six deliberately unwinnable manifests are refused. | `tests/acceptance.test.ts`, `tests/carts.test.ts`, `tests/generator.test.ts` |
-| Engine holds 60 FPS on a mid-range phone | **Met in emulation, not on a phone.** Headless Chromium, main thread throttled 4x through the DevTools protocol, 390 by 844 at device pixel ratio 3. | Engine alone: 0.33 to 0.39 ms of work per frame, worst frame 1.7 ms, 60.0 fps, 0 of 300 frames late, on four carts including a stress cart at the 64-entity cap. Real play page: 0.13 to 0.17 ms mean, worst 1.0 ms, 60.0 fps, 0 late frames. Budget is 16.67 ms. | `tests/perf.test.ts`, `npm run perf` (writes `docs/perf.json`) |
+| Engine holds 60 FPS on a mid-range phone | **Met in emulation, not on a phone.** Headless Chromium, main thread throttled 4x through the DevTools protocol, 390 by 844 at device pixel ratio 3. | Engine alone, across five runs of the test: 0.16 to 0.39 ms of work per frame, worst single frame 5.0 ms, 60.0 fps and 0 of 300 frames late every time, on four carts including a stress cart at the 64-entity cap. Real play page, last run: 0.13 to 0.17 ms mean, worst 1.0 ms, 60.0 fps, 0 late frames. Budget is 16.67 ms. The throttle is checked too: the same busy loop took 122 ms unthrottled and 504 ms at 4x. | `tests/perf.test.ts`, `npm run perf` (writes `docs/perf.json`) |
 | A cart's JSON stays under 20 KB without images | **Met** | Mean 1,444 bytes, max 2,708 bytes over the 50. A whole `.cart` file with sprites and the bot's recording: mean 3,346 bytes, max 4,573. | `tests/acceptance.test.ts`, `tests/sprites.test.ts`, `tests/web.test.ts` |
 
 Things that qualify those numbers:
@@ -56,6 +56,7 @@ Things that qualify those numbers:
 
 - 90 frames of safety after a hit let you die on purpose and stroll through six tiles of traffic. It is 45 now, and a test checks five tiles of spikes cannot be crossed that way.
 - A test map I built to be impossible in 20 seconds was won with 10 frames to spare, because the goal's touch box is generous and my arithmetic was not.
+- My first check that the throttle was real compared the engine's frame cost with and without it. It failed in the fresh clone: 0.166 ms against 0.202 ms, because a frame is cheaper than the browser's 0.1 ms timer can measure well. It now times a 40 million step loop instead, which comes out 4.1 times slower.
 - The 4x throttle barely registers. The engine is small enough that a frame costs about 2% of the budget throttled, so the meaningful half of the 60 FPS test is that frames arrive on time, not how long the work takes.
 - A 3 pixel wide N is either a lowercase n or an M. "KNIGHT ASCENT" read as "KMIGHT ASCEMT" until M, N and W got wider glyphs.
 - Rotating the A and B buttons 24 degrees in CSS, as on the real handheld, shredded the pixel art. They are offset now, not rotated.
@@ -111,4 +112,7 @@ Things that qualify those numbers:
 
 ## Fresh clone check
 
-`git clone` of this repo into an empty folder, then `npm install && npm run dev`: see the final commit message and the report for the result of the last run.
+Done twice, into an empty folder each time, with the server on port 4103.
+
+- First clone: `git clone`, `npm install && npm run dev`. The home page answered 200 (4.1 s, the first compile), a cart was made through `POST /api/carts` (PENGUIN TREK, valid first try, won by the bot), the shelf listed it ahead of the three hand-written carts, and the play page, gallery, label PNG, `.cart` download and logo all answered 200. A bad id answered 404. `npm run typecheck` was clean. `npm test`: 147 of 148 passed. The one failure was the throttle sanity check described above, which was a bad test and has been replaced.
+- Second clone, after that fix: `npm install && npm test`. See the last line of the build report for the count.
