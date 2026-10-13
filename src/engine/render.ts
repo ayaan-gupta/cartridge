@@ -193,7 +193,7 @@ export class Renderer {
     this.rect(0, H - 4, W, 4, 3)
     this.rect(0, H - 7, W, 1, 2)
 
-    const lines = wrapText(m.title, 19)
+    const lines = wrapText(m.title, 148, 2)
     let y = lines.length > 1 ? 16 : 24
     for (const line of lines.slice(0, 2)) {
       this.centred(line, y, 3, 2)
@@ -211,7 +211,7 @@ export class Renderer {
     })
 
     let by = 82
-    for (const line of wrapText(m.blurb, 34).slice(0, 3)) {
+    for (const line of wrapText(m.blurb, 144).slice(0, 3)) {
       this.centred(line, by, 2)
       by += 8
     }

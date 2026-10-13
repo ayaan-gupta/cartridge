@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Engine, jumpVelocity, pxPerFrame } from '@/engine/engine'
+import { drawText, textWidth, wrapText } from '@/engine/font'
 import { advance, buttonForKey, dpadButtons, STEP_MS } from '@/engine/input'
 import { Renderer } from '@/engine/render'
 import { packSheet, TRANSPARENT, unpackSheet } from '@/engine/sheet'
@@ -354,6 +355,41 @@ describe('rendering and sheets', () => {
     expect(renderer.camera(game).x).toBeGreaterThan(0)
     run(game, BTN.right, 60)
     expect(renderer.camera(game).x).toBe(20 * TILE - SCREEN_W)
+  })
+})
+
+describe('the pixel font', () => {
+  const ink = (text: string) => {
+    const w = textWidth(text)
+    const fb = new Uint8Array(w * 5)
+    drawText(fb, w, 5, text, 0, 0, 1)
+    return Array.from({ length: 5 }, (_, y) => [...fb.slice(y * w, y * w + w)].join('')).join('/')
+  }
+
+  it('draws M, N, W and H so they cannot be mistaken for each other', () => {
+    const shapes = ['M', 'N', 'W', 'H', 'U', 'V'].map(ink)
+    expect(new Set(shapes).size).toBe(6)
+    expect(ink('N')).toBe('1001/1101/1011/1001/1001')
+    expect(ink('I')).toBe('111/010/010/010/111')
+  })
+
+  it('measures text by its real width, wide letters included', () => {
+    expect(textWidth('')).toBe(0)
+    expect(textWidth('A')).toBe(3)
+    expect(textWidth('AB')).toBe(7)
+    expect(textWidth('MN')).toBe(10)
+    expect(textWidth('mn')).toBe(10)
+    expect(textWidth('A B')).toBe(11)
+    expect(textWidth('AB', 2)).toBe(14)
+  })
+
+  it('wraps at spaces to a pixel width, and never draws off the screen', () => {
+    const lines = wrapText('A KNIGHT CLIMBING A TOWER FULL OF GOBLINS TO RESCUE THE PRINCESS.', 144)
+    expect(lines.length).toBeGreaterThan(1)
+    for (const line of lines) expect(textWidth(line)).toBeLessThanOrEqual(144)
+    expect(lines.join(' ')).toBe('A KNIGHT CLIMBING A TOWER FULL OF GOBLINS TO RESCUE THE PRINCESS.')
+    for (const title of ['WWWWWWWWWWWWWWWWWWWWWWWW', 'MOUNTAINEERING MAMMOTHS', 'A B']) for (const line of wrapText(title, 148, 2)) expect(textWidth(line, 2)).toBeLessThanOrEqual(148)
+    expect(wrapText('', 100)).toEqual([])
   })
 })
 

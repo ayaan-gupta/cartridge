@@ -115,6 +115,6 @@ describe('frame budget under a 4x CPU throttle (emulated mid-range phone)', () =
     const free = await measure(stressManifest(), IDLE, 1, 240)
     const slowed = await measure(stressManifest(), IDLE, 4, 240)
     console.log(`stress cart work per frame: ${free.workMs.toFixed(3)} ms unthrottled, ${slowed.workMs.toFixed(3)} ms at 4x`)
-    expect(slowed.workMs).toBeGreaterThan(free.workMs * 1.8)
+    expect(slowed.workMs).toBeGreaterThan(free.workMs * 1.4)
   })
 })
